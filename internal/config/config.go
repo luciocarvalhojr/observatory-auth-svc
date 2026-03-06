@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/spf13/viper"
 )
 
@@ -16,7 +18,7 @@ type Config struct {
 	OIDCClientSecret string `mapstructure:"OIDC_CLIENT_SECRET"`
 
 	// JWT
-	JWTSecret    string `mapstructure:"JWT_SECRET"`
+	JWTSecret    string `mapstructure:"JWT_SECRET" json:"-"`
 	JWTAccessTTL string `mapstructure:"JWT_ACCESS_TTL"`
 
 	// Redis
@@ -29,21 +31,31 @@ type Config struct {
 	Env string `mapstructure:"ENV"`
 }
 
+func mustBindEnv(keys ...string) {
+	for _, key := range keys {
+		if err := viper.BindEnv(key); err != nil {
+			panic(fmt.Sprintf("viper.BindEnv(%q): %v", key, err))
+		}
+	}
+}
+
 func Load() (*Config, error) {
 	viper.AutomaticEnv()
 
 	// Explicitly bind each env var — required for viper.Unmarshal to work
 	// AutomaticEnv alone only works with viper.Get(), not Unmarshal
-	viper.BindEnv("PORT")
-	viper.BindEnv("OIDC_ISSUER")
-	viper.BindEnv("OIDC_CLIENT_SECRET")
-	viper.BindEnv("OIDC_CLIENT_ID")
-	viper.BindEnv("OIDC_REDIRECT_URL")
-	viper.BindEnv("JWT_SECRET")
-	viper.BindEnv("JWT_ACCESS_TTL")
-	viper.BindEnv("REDIS_URL")
-	viper.BindEnv("OTLP_ENDPOINT")
-	viper.BindEnv("ENV")
+	mustBindEnv(
+		"PORT",
+		"OIDC_ISSUER",
+		"OIDC_CLIENT_ID",
+		"OIDC_CLIENT_SECRET",
+		"OIDC_REDIRECT_URL",
+		"JWT_SECRET",
+		"JWT_ACCESS_TTL",
+		"REDIS_URL",
+		"OTLP_ENDPOINT",
+		"ENV",
+	)
 
 	viper.SetDefault("PORT", "8081")
 	viper.SetDefault("JWT_ACCESS_TTL", "15m")
