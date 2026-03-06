@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# pre-push hook script
+
+set -e
+
+echo "Running pre-push hooks..."
+
+# 0. Regenerate Swagger Documentation (if installed)
+if command -v swag >/dev/null 2>&1; then
+    echo "Regenerating Swagger documentation..."
+    swag init -g cmd/api/main.go
+else
+    echo "swag not found, skipping documentation regeneration."
+    echo "Tip: Install with 'go install github.com/swaggo/swag/cmd/swag@latest'"
+fi
+
+# 1. Run Tests
+echo "Running tests..."
+go test -v -race -cover ./...
+
+# 2. Run Linting (if installed)
+if command -v golangci-lint >/dev/null 2>&1; then
+    echo "Running golangci-lint..."
+    golangci-lint run
+else
+    echo "golangci-lint not found, skipping linting."
+    echo "Tip: Install with 'brew install golangci-lint' or 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest'"
+fi
+
+# 3. Run SAST (if installed)
+if command -v gosec >/dev/null 2>&1; then
+    echo "Running gosec (SAST)..."
+    gosec ./...
+else
+    echo "gosec not found, skipping security scan."
+    echo "Tip: Install with 'go install github.com/securego/gosec/v2/cmd/gosec@latest'"
+fi
+
+# 4. Run SCA (if installed)
+if command -v govulncheck >/dev/null 2>&1; then
+    echo "Running govulncheck (SCA)..."
+    govulncheck ./...
+else
+    echo "govulncheck not found, skipping vulnerability scan."
+    echo "Tip: Install with 'go install golang.org/x/vuln/cmd/govulncheck@latest'"
+fi
+
+echo "All pre-push hooks passed!"
+exit 0
