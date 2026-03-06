@@ -20,7 +20,7 @@ type Claims struct {
 
 // TokenResponse is returned to the caller after successful auth.
 type TokenResponse struct {
-	AccessToken string `json:"access_token"`
+	AccessToken string `json:"access_token"` //#nosec G117 -- intentional: this is the API response body, not a hardcoded secret
 	TokenType   string `json:"token_type"`
 	ExpiresIn   int    `json:"expires_in"` // seconds
 }
