@@ -5,8 +5,8 @@ go 1.24
 require (
 	github.com/coreos/go-oidc/v3 v3.11.0
 	github.com/gin-gonic/gin v1.10.0
-	github.com/golang-jwt/jwt/v5 v5.2.1
-	github.com/redis/go-redis/v9 v9.7.0
+	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/redis/go-redis/v9 v9.7.3
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/viper v1.19.0
 	github.com/swaggo/swag v1.16.6
