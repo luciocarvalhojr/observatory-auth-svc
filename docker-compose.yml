@@ -1,0 +1,53 @@
+services:
+
+  # ── Dex — local OIDC provider ────────────────────────────────────────
+  dex:
+    image: ghcr.io/dexidp/dex:v2.41.1
+    container_name: observatory-dex
+    ports:
+      - "5556:5556"     # OIDC endpoints
+      - "5557:5557"     # Dex admin gRPC (not needed locally, but useful)
+    volumes:
+      - ./dev/dex.yaml:/etc/dex/config.yaml:ro
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5556/dex/.well-known/openid-configuration"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Redis — token blacklist + OIDC state ─────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: observatory-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+
+  # ── auth-svc ─────────────────────────────────────────────────────────
+  auth-svc:
+    build: .
+    container_name: observatory-auth-svc
+    extra_hosts:
+    - "localhost:host-gateway"
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: "8081"
+      ENV: "development"
+      OIDC_ISSUER:      "http://localhost:5556/dex"
+      OIDC_CLIENT_SECRET: "YX6vohz4s0T09ebEeeAnir"
+      OIDC_CLIENT_ID:   "observatory-local"
+      OIDC_REDIRECT_URL: "http://localhost:8081/auth/callback"
+      JWT_SECRET:       "local-dev-secret-change-in-prod"
+      JWT_ACCESS_TTL:   "15m"
+      REDIS_URL:        "redis://redis:6379/0"
+      OTLP_ENDPOINT:    ""   # disable tracing locally
+    depends_on:
+      dex:
+        condition: service_healthy
+      redis:
+        condition: service_healthy

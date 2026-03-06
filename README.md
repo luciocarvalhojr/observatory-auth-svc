@@ -15,11 +15,50 @@ OIDC-based authentication service for the [Observatory](https://github.com/lucio
 
 ## Local Development
 
-```bash
-# Copy and fill in your values
-cp .env.example .env
+The easiest way to get all dependencies (Redis and a local OIDC provider) up and running is using Docker Compose.
 
-go run cmd/api/main.go
+```bash
+docker compose up --build
+```
+
+Alternatively, you can run the service manually:
+
+1.  **Start dependencies:** `docker compose up dex redis -d`
+2.  **Copy and fill in your values:** `cp .env.example .env` (if applicable)
+3.  **Run:** `go run cmd/api/main.go`
+
+## Local Validation (Docker Compose)
+
+The `docker-compose.yml` provides a complete environment including **Dex** (simulated OIDC provider) and **Redis**.
+
+### 1. Start the Environment
+```bash
+docker compose up --build
+```
+
+### 2. Configure Local Hostname (Optional but Recommended)
+The local OIDC issuer is configured as `http://dex:5556/dex`. For your browser to follow redirects correctly during the login flow, add `dex` to your local hosts file:
+
+```bash
+echo "127.0.0.1 dex" | sudo tee -a /etc/hosts
+```
+
+### 3. Test the Auth Flow
+1.  Navigate to `http://localhost:8081/auth/login`.
+2.  You will be redirected to the Dex login page.
+3.  Log in using one of the pre-configured test users:
+
+| Email | Password | Role/Group |
+|---|---|---|
+| `admin@observatory.local` | `password123` | `admin` |
+| `viewer@observatory.local` | `password123` | `viewer` |
+
+4.  After successful login, you will be redirected back to the service, which will issue a JWT.
+
+### 4. Verify Health & Metrics
+```bash
+curl http://localhost:8081/healthz
+curl http://localhost:8081/readyz
 ```
 
 ## Environment Variables
@@ -40,6 +79,14 @@ go run cmd/api/main.go
 
 ```bash
 go test -v -race -cover ./...
+```
+
+## Build Validation (Docker)
+
+Ensure the container build process is correct:
+
+```bash
+docker build -t auth-svc .
 ```
 
 ## Deploy

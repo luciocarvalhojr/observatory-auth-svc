@@ -1,0 +1,47 @@
+# Dex configuration for local Observatory development
+# This simulates a real OIDC provider (Headlamp, Google, GitHub, etc.)
+
+issuer: http://localhost:5556/dex
+
+storage:
+  type: memory    # no database needed locally
+
+web:
+  http: 0.0.0.0:5556
+
+# ── Test users ────────────────────────────────────────────────────────────────
+# These are the users you can log in with locally.
+# In production, Dex connects to your real IDP (LDAP, GitHub, Google, etc.)
+enablePasswordDB: true
+
+staticPasswords:
+  - email: "admin@observatory.local"
+    # bcrypt hash of "password123"
+    hash: "$2y$10$KBaO4KVtBpPs4v9KGdVKYOG4FloJdEQYtZ9s84uTq4NImOK1mnNEm"
+    username: "admin"
+    userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+
+  - email: "viewer@observatory.local"
+    hash: "$2y$10$KBaO4KVtBpPs4v9KGdVKYOG4FloJdEQYtZ9s84uTq4NImOK1mnNEm"
+    username: "viewer"
+    userID: "08a8684b-db88-4b73-90a9-3cd1661f5467"
+
+# ── OAuth2 clients ────────────────────────────────────────────────────────────
+staticClients:
+  - id: observatory-local
+    name: Observatory (local dev)
+    secret: YX6vohz4s0T09ebEeeAnir
+    redirectURIs:
+      - http://localhost:8081/auth/callback
+      # Also allow the auth-svc inside Docker to redirect back
+      - http://auth-svc:8081/auth/callback
+
+# ── Claims ────────────────────────────────────────────────────────────────────
+# This makes Dex include groups in the ID token,
+# matching what your production IDP sends.
+oauth2:
+  skipApprovalScreen: true    # skip "Grant access?" screen — useful for testing
+
+# Map user fields to standard OIDC claims
+# Groups come from the connector (or static config below)
+connectors: []    # empty = use staticPasswords above only
