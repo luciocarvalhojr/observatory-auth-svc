@@ -1,0 +1,67 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/luciocarvalhojr/observatory-auth-svc
+  pullPolicy: IfNotPresent
+  tag: ""                    # overridden by appVersion in Chart.yaml
+
+service:
+  type: ClusterIP
+  port: 8081
+
+ingress:
+  enabled: false             # auth-svc is internal only — accessed via api-gateway
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+
+env:
+  PORT: "8081"
+  ENV: "production"
+  JWT_ACCESS_TTL: "15m"
+  OIDC_ISSUER: ""            # set in environment values file
+  OIDC_CLIENT_ID: ""         # set in environment values file
+  OIDC_REDIRECT_URL: ""      # set in environment values file
+  OTLP_ENDPOINT: "http://jaeger-collector.observability:4318"
+
+# Secrets — use SealedSecret in production
+secrets:
+  JWT_SECRET: ""             # override via SealedSecret
+  REDIS_URL: ""              # override via SealedSecret
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 10

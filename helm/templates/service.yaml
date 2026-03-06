@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "auth-svc.fullname" . }}
+  labels:
+    {{- include "auth-svc.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+      protocol: TCP
+  selector:
+    {{- include "auth-svc.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "auth-svc.fullname" . }}-config
+  labels:
+    {{- include "auth-svc.labels" . | nindent 4 }}
+data:
+  PORT: {{ .Values.env.PORT | quote }}
+  ENV: {{ .Values.env.ENV | quote }}
+  JWT_ACCESS_TTL: {{ .Values.env.JWT_ACCESS_TTL | quote }}
+  OIDC_ISSUER: {{ .Values.env.OIDC_ISSUER | quote }}
+  OIDC_CLIENT_ID: {{ .Values.env.OIDC_CLIENT_ID | quote }}
+  OIDC_REDIRECT_URL: {{ .Values.env.OIDC_REDIRECT_URL | quote }}
+  OTLP_ENDPOINT: {{ .Values.env.OTLP_ENDPOINT | quote }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "auth-svc.fullname" . }}-secret
+  labels:
+    {{- include "auth-svc.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  JWT_SECRET: {{ .Values.secrets.JWT_SECRET | quote }}
+  REDIS_URL: {{ .Values.secrets.REDIS_URL | quote }}
