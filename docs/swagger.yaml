@@ -1,0 +1,146 @@
+basePath: /
+definitions:
+  domain.IntrospectResponse:
+    properties:
+      active:
+        type: boolean
+      email:
+        type: string
+      sub:
+        type: string
+    type: object
+  domain.TokenResponse:
+    properties:
+      access_token:
+        description: '#nosec G117 -- intentional: this is the API response body, not
+          a hardcoded secret'
+        type: string
+      expires_in:
+        description: seconds
+        type: integer
+      token_type:
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact:
+    name: Lucio Carvalho
+  description: OIDC-based authentication service for the Observatory platform.
+  title: Observatory Auth Service
+  version: "1.0"
+paths:
+  /auth/callback:
+    get:
+      description: Handles the OIDC provider callback, exchanges code for JWT
+      parameters:
+      - description: Authorization code
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: State
+        in: query
+        name: state
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: OIDC callback
+      tags:
+      - auth
+  /auth/introspect:
+    get:
+      description: Validates a Bearer token and returns identity claims. Used by api-gateway.
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.IntrospectResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Validate a JWT
+      tags:
+      - auth
+  /auth/login:
+    get:
+      description: Redirects the user to the OIDC provider login page
+      responses:
+        "302":
+          description: Found
+      summary: Initiate OIDC login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      description: Adds the token to the blacklist until its natural expiry
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Revoke a JWT
+      tags:
+      - auth
+  /healthz:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Liveness probe
+      tags:
+      - health
+  /readyz:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Readiness probe
+      tags:
+      - health
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
