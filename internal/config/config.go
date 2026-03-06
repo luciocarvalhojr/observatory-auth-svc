@@ -10,9 +10,10 @@ type Config struct {
 	Port string `mapstructure:"PORT"`
 
 	// OIDC
-	OIDCIssuer      string `mapstructure:"OIDC_ISSUER"`
-	OIDCClientID    string `mapstructure:"OIDC_CLIENT_ID"`
-	OIDCRedirectURL string `mapstructure:"OIDC_REDIRECT_URL"`
+	OIDCIssuer       string `mapstructure:"OIDC_ISSUER"`
+	OIDCClientID     string `mapstructure:"OIDC_CLIENT_ID"`
+	OIDCRedirectURL  string `mapstructure:"OIDC_REDIRECT_URL"`
+	OIDCClientSecret string `mapstructure:"OIDC_CLIENT_SECRET"`
 
 	// JWT
 	JWTSecret    string `mapstructure:"JWT_SECRET"`
@@ -30,6 +31,19 @@ type Config struct {
 
 func Load() (*Config, error) {
 	viper.AutomaticEnv()
+
+	// Explicitly bind each env var — required for viper.Unmarshal to work
+	// AutomaticEnv alone only works with viper.Get(), not Unmarshal
+	viper.BindEnv("PORT")
+	viper.BindEnv("OIDC_ISSUER")
+	viper.BindEnv("OIDC_CLIENT_SECRET")
+	viper.BindEnv("OIDC_CLIENT_ID")
+	viper.BindEnv("OIDC_REDIRECT_URL")
+	viper.BindEnv("JWT_SECRET")
+	viper.BindEnv("JWT_ACCESS_TTL")
+	viper.BindEnv("REDIS_URL")
+	viper.BindEnv("OTLP_ENDPOINT")
+	viper.BindEnv("ENV")
 
 	viper.SetDefault("PORT", "8081")
 	viper.SetDefault("JWT_ACCESS_TTL", "15m")

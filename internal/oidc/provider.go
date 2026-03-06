@@ -29,10 +29,11 @@ func New(ctx context.Context, cfg *config.Config) (*Provider, error) {
 	})
 
 	oauth2Config := oauth2.Config{
-		ClientID:    cfg.OIDCClientID,
-		Endpoint:    provider.Endpoint(),
-		RedirectURL: cfg.OIDCRedirectURL,
-		Scopes:      []string{gooidc.ScopeOpenID, "profile", "email", "groups"},
+		ClientID:     cfg.OIDCClientID,
+		ClientSecret: cfg.OIDCClientSecret,
+		Endpoint:     provider.Endpoint(),
+		RedirectURL:  cfg.OIDCRedirectURL,
+		Scopes:       []string{gooidc.ScopeOpenID, "profile", "email", "groups"},
 	}
 
 	return &Provider{
