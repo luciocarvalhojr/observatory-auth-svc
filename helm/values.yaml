@@ -32,6 +32,7 @@ env:
   JWT_ACCESS_TTL: "15m"
   OIDC_ISSUER: ""            # set in environment values file
   OIDC_CLIENT_ID: ""         # set in environment values file
+  OIDC_CLIENT_SECRET: ""     # set in environment values file
   OIDC_REDIRECT_URL: ""      # set in environment values file
   OTLP_ENDPOINT: "http://jaeger-collector.observability:4318"
 

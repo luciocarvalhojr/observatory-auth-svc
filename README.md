@@ -68,6 +68,7 @@ curl http://localhost:8081/readyz
 | `PORT` | Listen port | `8081` |
 | `OIDC_ISSUER` | OIDC provider URL | required |
 | `OIDC_CLIENT_ID` | OIDC client ID | required |
+| `OIDC_CLIENT_SECRET` | OIDC client SECRET | required |
 | `OIDC_REDIRECT_URL` | Callback URL | required |
 | `JWT_SECRET` | Signing key | required |
 | `JWT_ACCESS_TTL` | Token TTL | `15m` |
@@ -97,6 +98,7 @@ helm install auth-svc ./helm \
   --create-namespace \
   --set env.OIDC_ISSUER=https://your-idp \
   --set env.OIDC_CLIENT_ID=your-client-id \
+  --set env.OIDC_CLIENT_SECRET=your-client-id \
   --set secrets.JWT_SECRET=your-secret \
   --set secrets.REDIS_URL=redis://redis:6379
 ```
