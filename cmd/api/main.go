@@ -116,6 +116,8 @@ func main() {
 		log.Error().Err(err).Msg("shutdown error")
 	}
 
-	rdb.Close()
+	if err := rdb.Close(); err != nil {
+		log.Error().Err(err).Msg("redis close error")
+	}
 	log.Info().Msg("auth-svc stopped")
 }
