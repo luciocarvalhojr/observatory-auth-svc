@@ -30,7 +30,7 @@ staticPasswords:
 staticClients:
   - id: observatory-local
     name: Observatory (local dev)
-    secret: YX6vohz4s0T09ebEeeAnir
+    secret: YX6vohz4s0T09ebEeeAnir #gitleaks:allow -- this is a local-only secret for testing; in production, use a SealedSecret
     redirectURIs:
       - http://localhost:8081/auth/callback
       # Also allow the auth-svc inside Docker to redirect back
