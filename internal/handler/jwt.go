@@ -9,6 +9,7 @@ import (
 )
 
 // issueToken creates a signed JWT for the given identity.
+// The token includes standard claims like subject, issued at, and expiration.
 func issueToken(identity *domain.Identity, secret string, ttl time.Duration) (string, error) {
 	now := time.Now()
 
