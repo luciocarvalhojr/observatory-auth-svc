@@ -217,6 +217,15 @@ jobs:
         env:
           COSIGN_EXPERIMENTAL: 1
 
+      - name: Delete untagged versions only
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: observatory-auth-svc
+          package-type: container
+          min-versions-to-keep: 0
+          delete-only-untagged-versions: true
+
+
   update-helm-chart:
     runs-on: ubuntu-latest
     needs: build-and-push
