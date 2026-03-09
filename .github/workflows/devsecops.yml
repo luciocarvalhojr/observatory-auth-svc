@@ -82,7 +82,7 @@ jobs:
         run: docker build -t auth-svc:${{ github.sha }} .
 
       - name: Trivy scan
-        uses: aquasecurity/trivy-action@0.34.2
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: auth-svc:${{ github.sha }}
           format: table
