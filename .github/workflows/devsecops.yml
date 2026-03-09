@@ -150,6 +150,9 @@ jobs:
         with:
           ref: v${{ needs.release.outputs.version }}
 
+      - name: Debug version
+        run: echo "Version is '${{ needs.release.outputs.version }}'"
+
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
