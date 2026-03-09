@@ -1,8 +1,11 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
+
 
 env:
   REGISTRY: ghcr.io
@@ -10,6 +13,7 @@ env:
 
 jobs:
   build-and-push:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -88,6 +92,7 @@ jobs:
           COSIGN_EXPERIMENTAL: 1
 
   trigger-helm-update:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     needs: build-and-push
     permissions:
