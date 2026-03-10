@@ -1,10 +1,19 @@
-# observatory-*-svc/.golangci.yml
-version: "2"
-extends:
-  - "https://raw.githubusercontent.com/luciocarvalhojr/observatory/main/configs/.golangci.yml"
+# yaml-language-server: $schema=https://golangci-lint.run/jsonschema/golangci.v2.jsonschema.json
 
-# Override only what's service-specific, e.g.:
-# linters-settings:
-#   wrapcheck:
-#     ignorePackageGlobs:
-#       - "github.com/some/extra-package"
+version: "2"
+
+linters:
+  default: standard   # govet, errcheck, staticcheck, unused, ineffassign, stylecheck...
+  enable:
+    # Things standard misses that matter for a Gin HTTP service
+    - bodyclose     # HTTP response body not closed
+    - errorlint     # incorrect error comparisons (errors.Is/As)
+    - copyloopvar   # loop variable capture bugs
+    - misspell      # typos in comments and strings
+    - revive        # better golint replacement
+
+  exclusions:
+    rules:
+      # Test files: relax a few noisy checks
+      - path: "_test\\.go"
+        linters: [errcheck, staticcheck]
