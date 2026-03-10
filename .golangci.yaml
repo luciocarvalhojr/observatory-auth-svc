@@ -1,0 +1,10 @@
+# observatory-*-svc/.golangci.yml
+version: "2"
+extends:
+  - "https://raw.githubusercontent.com/luciocarvalhojr/observatory/main/configs/.golangci.yml"
+
+# Override only what's service-specific, e.g.:
+# linters-settings:
+#   wrapcheck:
+#     ignorePackageGlobs:
+#       - "github.com/some/extra-package"

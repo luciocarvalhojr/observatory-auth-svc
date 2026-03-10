@@ -115,8 +115,13 @@ jobs:
         with:
           node-version: 'lts/*'
 
-      - name: Install semantic-release
-        run: npm install -g semantic-release @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/github
+      - name: Install semantic-release dependencies
+        # fix: conventionalcommits preset is NOT bundled with semantic-release core
+        # fix: use --no-save (local install, no package.json needed) instead of -g
+        # fix: @semantic-release/* plugins ARE bundled already — only preset was missing
+        run: |
+          npm install --no-save \
+            conventional-changelog-conventionalcommits
 
       - name: Release
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -124,6 +129,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          BEFORE=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")   # fix: BEFORE was never set
           npx semantic-release
           git fetch --tags --force
           AFTER=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
@@ -166,9 +172,9 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=semver,pattern={{version}},value=${{needs.release.outputs.version}}
-            type=semver,pattern={{major}}.{{minor}},value=${{needs.release.outputs.version}}
-            type=semver,pattern={{major}},value=${{needs.release.outputs.version}}
+            type=semver,pattern={{version}},value=${{ needs.release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.release.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.release.outputs.version }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
