@@ -3,7 +3,7 @@ name: auth-svc
 description: Observatory Auth Service — OIDC-based authentication
 type: application
 version: 0.1.0
-appVersion: "1.4.0"
+appVersion: "1.5.0"
 keywords:
   - observatory
   - auth
