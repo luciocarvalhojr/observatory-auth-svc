@@ -1,3 +1,4 @@
+// Package oidc implements OpenID Connect authentication using the go-oidc library.
 package oidc
 
 import (

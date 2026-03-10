@@ -1,3 +1,4 @@
+// Package config loads configuration for auth-svc from environment variables using viper.
 package config
 
 import (
@@ -31,6 +32,7 @@ type Config struct {
 	Env string `mapstructure:"ENV"`
 }
 
+// mustBindEnv binds the given keys to environment variables, panicking on error.
 func mustBindEnv(keys ...string) {
 	for _, key := range keys {
 		if err := viper.BindEnv(key); err != nil {
@@ -39,6 +41,7 @@ func mustBindEnv(keys ...string) {
 	}
 }
 
+// Load loads configuration from environment variables into a Config struct.
 func Load() (*Config, error) {
 	viper.AutomaticEnv()
 

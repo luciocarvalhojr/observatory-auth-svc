@@ -1,3 +1,4 @@
+// Package domain defines the core data structures for auth-svc, such as JWT claims and API responses.
 package domain
 
 import "github.com/golang-jwt/jwt/v5"

@@ -8,6 +8,7 @@
 // @in header
 // @name Authorization
 
+// Package main is the entry point for the auth-svc application, which provides OIDC-based authentication and JWT issuance.
 package main
 
 import (

@@ -1,3 +1,4 @@
+// Package handler implements the HTTP handlers for auth-svc, including OIDC login, callback, token introspection, and logout.
 package handler
 
 import (

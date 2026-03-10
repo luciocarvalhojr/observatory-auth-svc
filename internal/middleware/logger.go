@@ -1,3 +1,4 @@
+// Package middleware provides HTTP middleware for auth-svc, such as logging and recovery.
 package middleware
 
 import (
