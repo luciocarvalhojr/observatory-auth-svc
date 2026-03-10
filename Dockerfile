@@ -13,7 +13,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -o /auth-svc ./cmd/api
 
 # ── Final stage — distroless ─────────────────────────────────────────
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian13:nonroot
 
 COPY --from=builder /auth-svc /auth-svc
 
