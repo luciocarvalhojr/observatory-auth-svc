@@ -76,6 +76,45 @@ curl http://localhost:8081/readyz
 | `OTLP_ENDPOINT` | Jaeger OTLP endpoint | `http://jaeger:4318` |
 | `ENV` | `development` or `production` | `production` |
 
+## Pre-commit Hooks (lefthook)
+
+The project uses [lefthook](https://github.com/evilmartians/lefthook) to run the same checks as the CI pipeline locally on every `git commit`.
+
+### Install
+
+```bash
+brew install lefthook
+lefthook install
+```
+
+### What runs on each commit
+
+| Check | Tool | Mirrors pipeline step |
+|---|---|---|
+| Lint | `golangci-lint run` | `test-and-lint` / Lint |
+| Tests + coverage gate | `go test -race` | `test-and-lint` / Test & Coverage |
+| Swagger docs up to date | `swag init` + git diff | `test-and-lint` / Verify Swagger docs |
+| SAST | `gosec ./...` | `security-scan` / Gosec |
+| SCA | `govulncheck ./...` | `security-scan` / Govulncheck |
+| Secrets scan | `gitleaks protect --staged` | `security-scan` / Gitleaks |
+
+All checks run in parallel. If any fail, the commit is blocked.
+
+### Required tools
+
+```bash
+brew install golangci-lint gitleaks
+go install github.com/swaggo/swag/cmd/swag@latest
+go install github.com/securego/gosec/v2/cmd/gosec@v2.23.0
+go install golang.org/x/vuln/cmd/govulncheck@latest
+```
+
+### Skip hooks (emergency only)
+
+```bash
+git commit --no-verify
+```
+
 ## Run Tests
 
 ```bash

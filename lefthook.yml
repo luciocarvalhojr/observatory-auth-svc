@@ -1,0 +1,35 @@
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      run: golangci-lint run
+      fail_text: "Install: brew install golangci-lint"
+
+    test-and-coverage:
+      run: |
+        go test -race -coverprofile=coverage.out ./... &&
+        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%') &&
+        THRESHOLD=0 &&
+        echo "Coverage: ${COVERAGE}%" &&
+        awk -v c="$COVERAGE" -v t="$THRESHOLD" 'BEGIN { if (c+0 < t+0) { print "Coverage " c "% is below " t "% threshold"; exit 1 } }'
+
+    swagger:
+      run: |
+        swag init -g cmd/api/main.go &&
+        if [ -n "$(git status --porcelain docs/)" ]; then
+          echo "Swagger docs are out of date. Stage the updated docs/ and try again."
+          exit 1
+        fi
+      fail_text: "Install swag: go install github.com/swaggo/swag/cmd/swag@latest"
+
+    gosec:
+      run: gosec ./...
+      fail_text: "Install: go install github.com/securego/gosec/v2/cmd/gosec@v2.23.0"
+
+    govulncheck:
+      run: govulncheck ./...
+      fail_text: "Install: go install golang.org/x/vuln/cmd/govulncheck@latest"
+
+    gitleaks:
+      run: gitleaks protect --staged --redact
+      fail_text: "Install: brew install gitleaks"
