@@ -92,18 +92,24 @@ lefthook install
 | Check | Tool | Mirrors pipeline step |
 |---|---|---|
 | Lint | `golangci-lint run` | `test-and-lint` / Lint |
-| Tests + coverage gate | `go test -race` | `test-and-lint` / Test & Coverage |
+| Tests + coverage gate | `go test -race -coverprofile` | `test-and-lint` / Test & Coverage |
 | Swagger docs up to date | `swag init` + git diff | `test-and-lint` / Verify Swagger docs |
 | SAST | `gosec ./...` | `security-scan` / Gosec |
 | SCA | `govulncheck ./...` | `security-scan` / Govulncheck |
-| Secrets scan | `gitleaks protect --staged` | `security-scan` / Gitleaks |
+| Secrets scan | `gitleaks protect --staged --redact` | `security-scan` / Gitleaks |
+| No direct commits to `main` | branch name check | branch protection |
+| Merge conflict markers | grep on staged files | code quality |
+| Trailing whitespace | grep on staged files | code quality |
+| Missing newline at EOF | tail check on staged files | code quality |
+| Large files (>512 KB) | file size check | repo hygiene |
+| YAML syntax | `yamllint -d relaxed` | code quality |
 
 All checks run in parallel. If any fail, the commit is blocked.
 
 ### Required tools
 
 ```bash
-brew install golangci-lint gitleaks
+brew install golangci-lint gitleaks yamllint
 go install github.com/swaggo/swag/cmd/swag@latest
 go install github.com/securego/gosec/v2/cmd/gosec@v2.23.0
 go install golang.org/x/vuln/cmd/govulncheck@latest
@@ -129,15 +135,17 @@ Ensure the container build process is correct:
 docker build -t auth-svc .
 ```
 
-## Deploy
+## CI/CD Pipeline
 
-```bash
-helm install auth-svc ./helm \
-  --namespace observatory \
-  --create-namespace \
-  --set env.OIDC_ISSUER=https://your-idp \
-  --set env.OIDC_CLIENT_ID=your-client-id \
-  --set env.OIDC_CLIENT_SECRET=your-client-id \
-  --set secrets.JWT_SECRET=your-secret \
-  --set secrets.REDIS_URL=redis://redis:6379
-```
+The GitHub Actions pipeline (`.github/workflows/devsecops.yml`) runs on every push and pull request to `main`.
+
+| Job | What it does |
+|---|---|
+| `test-and-lint` | Lint (`golangci-lint`), tests with race detector, coverage gate, Swagger doc verification |
+| `security-scan` | Secret scanning (Gitleaks), SAST (Gosec), SCA (Govulncheck) |
+| `docker-scan` | Builds the Docker image and runs a Trivy scan (blocks on `CRITICAL`/`HIGH` CVEs) |
+| `release` | Creates a GitHub release via semantic-release (conventional commits) |
+| `build-and-push` | Builds and pushes the image to GHCR, generates an SPDX SBOM, and signs the image with Cosign (keyless via GitHub OIDC) |
+| `update-helm-chart` | Opens a PR on [`luciocarvalhojr/helm-charts`](https://github.com/luciocarvalhojr/helm-charts) to bump the image tag/digest — merging that PR triggers ArgoCD to deploy |
+
+The `release`, `build-and-push`, and `update-helm-chart` jobs only run on pushes to `main` when a new version is published.
