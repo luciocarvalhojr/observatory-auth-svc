@@ -11,20 +11,18 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-
-# ----- Test, lint, and verify Swagger docs -----
   test-and-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v5
         with:
           go-version-file: .go-version
           cache: true
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v9
+        uses: golangci/golangci-lint-action@v6
         with:
           version: latest
 
@@ -37,10 +35,10 @@ jobs:
           THRESHOLD=0   # TODO: raise to 80 when tests are written
           echo "Coverage: ${COVERAGE}%"
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-            echo "❌ Coverage ${COVERAGE}% is below the ${THRESHOLD}% threshold"
+            echo "Coverage ${COVERAGE}% is below the ${THRESHOLD}% threshold"
             exit 1
           fi
-          echo "✅ Coverage ${COVERAGE}% passes"
+          echo "Coverage ${COVERAGE}% passes"
 
       - name: Verify Swagger docs
         run: |
@@ -51,15 +49,14 @@ jobs:
             exit 1
           fi
 
-# ----- Security scans: secret scanning, SAST, and SCA -----
   security-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v5
         with:
           go-version-file: .go-version
           cache: true
@@ -79,12 +76,11 @@ jobs:
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
 
-# ---- Docker scan: build image and scan with Trivy -----
   docker-scan:
     runs-on: ubuntu-latest
     needs: [test-and-lint, security-scan]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Build image
         run: docker build -t ${{ github.event.repository.name }}:${{ github.sha }} .
@@ -99,7 +95,6 @@ jobs:
           vuln-type: os,library
           severity: CRITICAL,HIGH
 
-# ----- Release: create GitHub release based on conventional commits, and publish to GHCR -----
   release:
     runs-on: ubuntu-latest
     needs: [docker-scan]
@@ -112,11 +107,11 @@ jobs:
       published: ${{ steps.release.outputs.published }}
       version: ${{ steps.release.outputs.version }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
 
@@ -126,7 +121,6 @@ jobs:
             conventional-changelog-conventionalcommits
 
       - name: Release
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -142,7 +136,6 @@ jobs:
             echo "published=false" >> $GITHUB_OUTPUT
           fi
 
-# ----- Post-release: build/push Docker image, generate SBOM, sign image, and open PR to update Helm chart -----
   build-and-push:
     runs-on: ubuntu-latest
     needs: release
@@ -156,7 +149,7 @@ jobs:
       digest: ${{ steps.build.outputs.digest }}
       chart: ${{ steps.meta.outputs.chart }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           ref: v${{ needs.release.outputs.version }}
 
@@ -167,7 +160,7 @@ jobs:
           echo "chart=$(echo '${{ github.repository }}' | cut -d'/' -f2)" >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
-        uses: docker/login-action@v4
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -175,7 +168,7 @@ jobs:
 
       - name: Extract Docker metadata
         id: docker-meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -184,11 +177,11 @@ jobs:
             type=semver,pattern={{major}},value=${{ needs.release.outputs.version }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@v3
 
       - name: Build and push
         id: build
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
@@ -216,7 +209,7 @@ jobs:
           output-file: sbom.spdx.json
 
       - name: Attach SBOM to release
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: sbom-${{ needs.release.outputs.version }}
           path: sbom.spdx.json
@@ -239,7 +232,6 @@ jobs:
           min-versions-to-keep: 0
           delete-only-untagged-versions: true
 
-# ----- Post-release: update Helm chart and open PR in helm-charts repo-----
   update-helm-chart:
     runs-on: ubuntu-latest
     needs: build-and-push
@@ -267,12 +259,17 @@ jobs:
       - name: Patch values.yaml and Chart.yaml
         run: |
           CHART=charts/${{ needs.build-and-push.outputs.chart }}
+
           yq -i '.image.tag = "${{ needs.build-and-push.outputs.version }}"' \
             helm-charts/${CHART}/values.yaml
           yq -i '.image.digest = "${{ needs.build-and-push.outputs.digest }}"' \
             helm-charts/${CHART}/values.yaml
           yq -i '.appVersion = "${{ needs.build-and-push.outputs.version }}"' \
             helm-charts/${CHART}/Chart.yaml
+
+          CURRENT=$(yq '.version' helm-charts/${CHART}/Chart.yaml)
+          BUMPED=$(echo "$CURRENT" | awk -F. '{print $1"."$2"."$3+1}')
+          yq -i ".version = \"$BUMPED\"" helm-charts/${CHART}/Chart.yaml
 
       - name: Open PR on helm-charts
         uses: peter-evans/create-pull-request@v6
