@@ -267,12 +267,17 @@ jobs:
       - name: Patch values.yaml and Chart.yaml
         run: |
           CHART=charts/${{ needs.build-and-push.outputs.chart }}
+
           yq -i '.image.tag = "${{ needs.build-and-push.outputs.version }}"' \
             helm-charts/${CHART}/values.yaml
           yq -i '.image.digest = "${{ needs.build-and-push.outputs.digest }}"' \
             helm-charts/${CHART}/values.yaml
           yq -i '.appVersion = "${{ needs.build-and-push.outputs.version }}"' \
             helm-charts/${CHART}/Chart.yaml
+
+          CURRENT=$(yq '.version' helm-charts/${CHART}/Chart.yaml)
+          BUMPED=$(echo "$CURRENT" | awk -F. '{print $1"."$2"."$3+1}')
+          yq -i ".version = \"$BUMPED\"" helm-charts/${CHART}/Chart.yaml
 
       - name: Open PR on helm-charts
         uses: peter-evans/create-pull-request@v6
