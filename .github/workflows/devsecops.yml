@@ -11,6 +11,8 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+
+# ----- Test, lint, and verify Swagger docs -----
   test-and-lint:
     runs-on: ubuntu-latest
     steps:
@@ -35,10 +37,10 @@ jobs:
           THRESHOLD=0   # TODO: raise to 80 when tests are written
           echo "Coverage: ${COVERAGE}%"
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-            echo "Coverage ${COVERAGE}% is below the ${THRESHOLD}% threshold"
+            echo "❌ Coverage ${COVERAGE}% is below the ${THRESHOLD}% threshold"
             exit 1
           fi
-          echo "Coverage ${COVERAGE}% passes"
+          echo "✅Coverage ${COVERAGE}% passes"
 
       - name: Verify Swagger docs
         run: |
@@ -49,6 +51,7 @@ jobs:
             exit 1
           fi
 
+# ----- Security scans: secret scanning, SAST, and SCA -----
   security-scan:
     runs-on: ubuntu-latest
     steps:
@@ -76,6 +79,7 @@ jobs:
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
 
+# ---- Docker scan: build image and scan with Trivy -----
   docker-scan:
     runs-on: ubuntu-latest
     needs: [test-and-lint, security-scan]
@@ -95,6 +99,7 @@ jobs:
           vuln-type: os,library
           severity: CRITICAL,HIGH
 
+# ----- Release: create GitHub release based on conventional commits, and publish to GHCR -----
   release:
     runs-on: ubuntu-latest
     needs: [docker-scan]
@@ -136,6 +141,7 @@ jobs:
             echo "published=false" >> $GITHUB_OUTPUT
           fi
 
+# ----- Post-release: build/push Docker image, generate SBOM, sign image, and open PR to update Helm chart -----
   build-and-push:
     runs-on: ubuntu-latest
     needs: release
@@ -232,6 +238,7 @@ jobs:
           min-versions-to-keep: 0
           delete-only-untagged-versions: true
 
+# ----- Post-release: update Helm chart and open PR in helm-charts repo-----
   update-helm-chart:
     runs-on: ubuntu-latest
     needs: build-and-push
